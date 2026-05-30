@@ -1,0 +1,208 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model College {
+  id                Int              @id @default(autoincrement())
+  nirf_id           String           @unique
+  name              String
+  slug              String           @unique
+  city              String
+  state             String
+  country           String           @default("India")
+  type              String
+  established_year  Int
+  nirf_rank         Int
+  nirf_score        Float
+  naac_grade        String
+  description       String
+  website           String
+  logo_url          String?
+  total_seats       Int
+  campus_size_acres Int
+  created_at        DateTime         @default(now())
+  updated_at        DateTime         @updatedAt
+
+  courses           Course[]
+  placements        Placement[]
+  cutoffs           Cutoff[]
+  infrastructure    Infrastructure?
+  reviews           Review[]
+  savedBy           SavedCollege[]
+
+  @@index([nirf_rank])
+  @@index([state])
+  @@index([type])
+}
+
+model Course {
+  id                       Int      @id @default(autoincrement())
+  college_id               Int
+  name                     String
+  duration_years           Float
+  fees_per_year            Int
+  total_seats              Int
+  entrance_exams_accepted  String
+  eligibility              String
+  created_at               DateTime @default(now())
+
+  college                  College  @relation(fields: [college_id], references: [id], onDelete: Cascade)
+
+  @@index([college_id])
+}
+
+model Placement {
+  id                      Int      @id @default(autoincrement())
+  college_id              Int
+  year                    Int
+  average_package_lpa     Float
+  highest_package_lpa     Float
+  median_package_lpa      Float
+  placement_rate_percent  Float
+  top_recruiters          String[]
+  created_at              DateTime @default(now())
+
+  college                 College  @relation(fields: [college_id], references: [id], onDelete: Cascade)
+
+  @@unique([college_id, year])
+  @@index([college_id])
+}
+
+model Cutoff {
+  id             Int      @id @default(autoincrement())
+  college_id     Int
+  exam           String
+  year           Int
+  branch         String
+  category       String
+  opening_rank   Float
+  closing_rank   Float
+  created_at     DateTime @default(now())
+
+  college        College  @relation(fields: [college_id], references: [id], onDelete: Cascade)
+
+  @@index([college_id])
+  @@index([exam, year, category])
+}
+
+model Infrastructure {
+  id                   Int      @id @default(autoincrement())
+  college_id           Int      @unique
+  hostel_available     Boolean  @default(false)
+  hostel_fees_per_year Int?
+  library              String?
+  labs                 String?
+  sports               String?
+  wifi_available       Boolean  @default(false)
+  created_at           DateTime @default(now())
+
+  college              College  @relation(fields: [college_id], references: [id], onDelete: Cascade)
+}
+
+model Review {
+  id                     Int      @id @default(autoincrement())
+  college_id             Int
+  user_id                Int?
+  overall_rating         Float
+  academics_rating       Float
+  placement_rating       Float
+  infrastructure_rating  Float
+  faculty_rating         Float
+  review_text            String
+  pros                   String
+  cons                   String
+  batch_year             Int
+  is_verified            Boolean  @default(false)
+  created_at             DateTime @default(now())
+
+  college                College  @relation(fields: [college_id], references: [id], onDelete: Cascade)
+  user                   User?    @relation(fields: [user_id], references: [id], onDelete: SetNull)
+
+  @@index([college_id])
+}
+
+model User {
+  id           Int            @id @default(autoincrement())
+  name         String
+  email        String         @unique
+  password     String
+  avatar_url   String?
+  created_at   DateTime       @default(now())
+  updated_at   DateTime       @updatedAt
+
+  savedColleges SavedCollege[]
+  reviews       Review[]
+  questions     Question[]
+  answers       Answer[]
+
+  @@index([email])
+}
+
+model SavedCollege {
+  id          Int      @id @default(autoincrement())
+  user_id     Int
+  college_id  Int
+  status      String   @default("shortlisted")
+  notes       String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  college     College  @relation(fields: [college_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, college_id])
+  @@index([user_id])
+}
+
+model Question {
+  id          Int      @id @default(autoincrement())
+  user_id     Int
+  college_id  Int?
+  title       String
+  body        String
+  tags        String[]
+  upvotes     Int      @default(0)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  answers     Answer[]
+
+  @@index([college_id])
+  @@index([user_id])
+}
+
+model Answer {
+  id           Int      @id @default(autoincrement())
+  question_id  Int
+  user_id      Int
+  body         String
+  upvotes      Int      @default(0)
+  is_accepted  Boolean  @default(false)
+  created_at   DateTime @default(now())
+
+  question     Question @relation(fields: [question_id], references: [id], onDelete: Cascade)
+  user         User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([question_id])
+}
+
+model RealTalkCache {
+  id           Int      @id @default(autoincrement())
+  college_id   Int      @unique
+  college_name String
+  pros         String[]
+  cons         String[]
+  hidden_gems  String[]
+  complaints   String[]
+  sentiment    String
+  sources      String[]
+  fetched_at   DateTime @default(now())
+  expires_at   DateTime
+
+  @@index([college_id])
+}
