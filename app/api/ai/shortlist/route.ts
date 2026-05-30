@@ -119,7 +119,7 @@ Extract filters and return JSON:
     })
 
     // Step 3 — Ask Groq to pick and rank top colleges with reasons
-    const collegeList = colleges.map((c, i) => ({
+    const collegeList = colleges.map((c: any, i: number) => ({
       index:    i,
       name:     c.name,
       type:     c.type,
